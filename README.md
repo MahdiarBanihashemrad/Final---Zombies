@@ -67,3 +67,8 @@ Players can defend themselves by shooting and removing the zombies from the game
 - After exploding:
     - The bomb will remove itself from the player’s bomb list
     - The explosion drawing will be cleared
+ 
+## Score Class
+- Displays each player’s score on the screen.
+- Updates whenever a player destroys a zombie.
+- Each player has their own score display.
