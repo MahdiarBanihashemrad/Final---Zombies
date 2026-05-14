@@ -121,12 +121,13 @@ class Prize(Turtle):
 		self.goto(randint(-250, 250), randint(-250, 250))
 		self.setheading(randint(0,360))
 
+	def move(self):
+		self.forward(2)
+		if self.xcor() > 250 or self.xcor() < -250:
+			self.setheading(180 - self.heading())
+		if self.ycor() > 250 or self.ycor() < -250:
+			self.setheading(-self.heading())
 
-	def spawn_zombies(self, num_zombies):
-		zombies = []
-		for i in range(num_zombies):
-			zombies.append(Zombie())
-		return zombies
      
 
 
@@ -146,12 +147,7 @@ class Zombie(Turtle):
 		zombie.forward(2)
       
 	
-	def spawn_zombies(self, num_zombies):
-		if Prize.distance(p1) < 20:
-			zombies = []
-			for i in range(num_zombies):
-				zombies.append(Zombie())
-			return zombies
+
 
 	def die(self):
 		self.clear()
@@ -162,42 +158,58 @@ class Zombie(Turtle):
 class Bomb(Turtle):
 	def __init__(self):
 		super().__init__()
+		self.bombs = []
 		self.speed(0)
 		self.hideturtle()
-		self.color(player_color)
+		self.color("red")
 		self.penup()
-		self.goto(randint(-250, 250), randint(-250, 250))
-		self.setheading(randint(0,360))
-		  
+		self.goto(player.xcor(), player.ycor())
+            
+	
+#Bomb Class:
+# Will originate at the location of the Player object that dropped it.
 
-	def relocate(self):
-		self.goto(randint(-250, 250), randint(-250, 250))
-		self.setheading(randint(0,360))
+# Each Bomb object will:
+
+# Be placed at the player’s current position
+# Wait for a short delay (~1 second) before exploding
+# When the bomb explodes:
+
+# A circular blast radius of approximately 100 pixels will be drawn
+# All Zombie objects within this radius will be destroyed and removed from the game
+# After exploding:
+
+# The bomb will remove itself from the player’s bomb list
+# The explosion drawing will be cleared
+
+	def explode(self):
+		pass
+
+p1 = Player(-100, 0, "blue", screen, "d", "a", "w")
+p2 = Player(100,0,"red",screen, "Right","Left", 'Up')
+prize = Prize()
 
 
 
-'''
-Bullet() Class
-Constructor ( def __init__(self) ):
-- Input: player object
-- Attributes:
-	- Position: same as player
-	- Heading: same as player
-	- Player: the player
- 
-move(self):
-- move 15 or more pixels forward
-- should call on the die() method when the bullet leaves the playing area
-
-die()
-- hides the object. 
-- removes object from the player's bullet list
-'''
+def update():
+	while p1.alive and p2.alive:
+		p1.move()
+		p2.move()
+		for bullet in p1.bullets:
+			bullet.move()
+		for bullet in p2.bullets:
+			bullet.move()
+		prize.move()
 
 
 #### DRIVER CODE ####
 screen = Screen()
 screen.bgcolor("black")
+
+p1 = Player(-100, 0, "blue", screen, "d", "a", "w")
+p2 = Player(100,0,"red",screen, "Right","Left", 'Up')
+prize = Prize()
+
 
 playing_area()
 
