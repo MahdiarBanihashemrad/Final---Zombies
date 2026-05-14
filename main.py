@@ -185,9 +185,6 @@ class Bomb(Turtle):
 	def explode(self):
 		pass
 
-p1 = Player(-100, 0, "blue", screen, "d", "a", "w")
-p2 = Player(100,0,"red",screen, "Right","Left", 'Up')
-prize = Prize()
 
 
 
@@ -201,10 +198,14 @@ def update():
 			bullet.move()
 		prize.move()
 
+		if p1.distance(prize) < 20 or p2.distance(prize) <20:
+			prize.relocate()
+
 
 #### DRIVER CODE ####
 screen = Screen()
 screen.bgcolor("black")
+screen.listen()
 
 p1 = Player(-100, 0, "blue", screen, "d", "a", "w")
 p2 = Player(100,0,"red",screen, "Right","Left", 'Up')
@@ -213,5 +214,6 @@ prize = Prize()
 
 playing_area()
 
+screen.ontimer(update(), 50)
 
 screen.mainloop()
