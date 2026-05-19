@@ -1,5 +1,6 @@
 from turtle import *
 from random import randint, choice
+import time
 
 #### CLASS AND FUNCTION DEFINITIONS #####
 def playing_area():
@@ -16,25 +17,27 @@ def playing_area():
 		t.right(90)
 	t.end_fill()
 
-'''
-Player() Class
+class Score(Turtle):
+    def __init__(self, x, y, color):
+        super().__init__()
+        self.speed(0)
+        self.color(color)
+        self.penup()
+        self.hideturtle()
+        self.goto(x, y)
+        self.score = 0
+        self.display_score()
 
-Constructor( def __init__(self)):
-- player should be shaped like a turtle.
-- will take in the x and y coordinates for where the player will initially appear.
-- will take in a color for the player
-- will take in keys to turn left, turn right and shoot bullets.
-- player will have an attribute that is a list that stores bullets
+    def display_score(self):
+        self.clear()
+        self.write(f"Score: {self.score}", align="center", font=("Arial", 16, "normal"))
 
+    def increase(self):
+        self.score += 1
+        self.display_score()
 
-
-
-fire(self):
-- creates a Bullet object
-- appends the Bullet object to the players's bullet list
-'''
 class Player(Turtle):
-    def __init__(self, x, y, color, screen, right_key, left_key, fire_key):
+    def __init__(self, x, y, color, screen, right_key, left_key, fire_key, bomb_key):
         super().__init__()
         self.ht()
         self.speed(0)
@@ -78,7 +81,10 @@ class Player(Turtle):
         elif self.health ==1:
             self.pencolor("Red")
 
-
+    def drop_bomb(self):
+        if len(self.bombs) < 3:
+            bomb = Bomb(self)
+            self.bombs.append(bomb)
 
 class Bullet(Turtle):
     def __init__(self, player):
@@ -97,7 +103,6 @@ class Bullet(Turtle):
             self.ht()
             self.player.bullets.remove(self)
     
-
     def move(self):
         self.forward(15)
         if self.xcor() > 250 or self.xcor() < -250:
@@ -105,65 +110,63 @@ class Bullet(Turtle):
         if self.ycor() > 250 or self.ycor() < -250:
             self.die()
 
-
 class Prize(Turtle):
 	def __init__(self):
 		super().__init__()
-		self.speed(1)
+		self.speed(0)
+		self.shapesize(2)
 		self.shape("circle")
 		self.color("yellow")
 		self.penup()
 		self.goto(randint(-250, 250), randint(-250, 250))
-		self.setheading(randint(0,360))
-          
 
 	def relocate(self):
 		self.goto(randint(-250, 250), randint(-250, 250))
-		self.setheading(randint(0,360))
 
 	def move(self):
-		self.forward(2)
-		if self.xcor() > 250 or self.xcor() < -250:
-			self.setheading(180 - self.heading())
-		if self.ycor() > 250 or self.ycor() < -250:
-			self.setheading(-self.heading())
+		
+		newX = randint(-3, 3) + self.xcor()
+		newY = randint(-3, 3) + self.ycor()
+		
+		if newX >250 or newX <-250:
+			newX = self.xcor()
 
-     
+		if newY >250 or newY < -250:
+			newY = self.ycor()
 
-
-
+		self.goto(newX, newY)
 
 class Zombie(Turtle):
-	def __init__(self):
-		super().__init__()
-		self.speed(1)
-		self.shape("turtle")
-		self.color("green")
-		self.penup()
-    
+    def __init__(self, target_player):
+        super().__init__()
+        self.speed(1)
+        self.shape('turtle')
+        self.color('green')
+        self.penup()
+        self.target = target_player
+        self.goto(randint(-240, 240), randint(-240, 240))
 
-	def move(self):
-		zombie.setheading(zombie.towards(p1))
-		zombie.forward(2)
-      
-	
+    def move(self):
+        self.setheading(self.towards(self.target))
+        self.forward(randint(2, 3))
 
-
-	def die(self):
-		self.clear()
-		self.ht()
-		self.alive = False
+    def die(self):
+        self.clear()
+        self.ht()
 
 
 class Bomb(Turtle):
-	def __init__(self):
-		super().__init__()
-		self.bombs = []
-		self.speed(0)
-		self.hideturtle()
-		self.color("red")
-		self.penup()
-		self.goto(player.xcor(), player.ycor())
+    def __init__(self, player):
+        super().__init__()
+        self.speed(0)
+        self.hideturtle()
+        self.color('red')
+        self.penup()
+        self.goto(player.xcor(), player.ycor())
+        self.player = player
+        self.screen = player.getscreen()
+        self.blast_radius = 100
+        self.screen.ontimer(self.explode, 1000)
             
 	
 #Bomb Class:
@@ -182,24 +185,106 @@ class Bomb(Turtle):
 # The bomb will remove itself from the player’s bomb list
 # The explosion drawing will be cleared
 
-	def explode(self):
-		pass
+    def explode(self):
+        self.showturtle()
+        self.shape("circle")
+        self.shapesize(self.blast_radius / 10)
+
+
+        zombies_to_remove = []
+        for z in zombies:
+            if self.distance(z) < self.blast_radius:
+                z.die()
+                zombies_to_remove.append(z)
+
+        for z in zombies_to_remove:
+            zombies.remove(z)
+        
+        
+
+    def clear_explosion(self):
+        self.clear()
+        self.hideturtle()
+        if self in self.player.bombs:
+            self.player.bombs.remove(self)
+    
+    # self.screen.ontimer(self.clear_explosion, 500)
+        
 
 
 
 
 def update():
-	while p1.alive and p2.alive:
-		p1.move()
-		p2.move()
-		for bullet in p1.bullets:
-			bullet.move()
-		for bullet in p2.bullets:
-			bullet.move()
-		prize.move()
+    global zombies, running
+    
+    if not running:
+        return
 
-		if p1.distance(prize) < 20 or p2.distance(prize) <20:
-			prize.relocate()
+    if not p1.alive:
+        game_over("Player 2 Wins! Player 1 was eaten.")
+        return
+    if not p2.alive:
+        game_over("Player 1 Wins! Player 2 was eaten.")
+        return
+
+    p1.move()
+    p2.move()
+
+
+    for bullet in p1.bullets[:]:
+        bullet.move()
+        
+        for zombie in zombies[:]:
+            if bullet.distance(zombie) < 15:
+                bullet.die()
+                zombie.die()
+                zombies.remove(zombie)
+                score1.increase()
+
+    for bullet in p2.bullets[:]:
+        bullet.move()
+        
+        for zombie in zombies[:]:
+            if bullet.distance(zombie) < 15:
+                bullet.die()
+                zombie.die()
+                zombies.remove(zombie)
+                score2.increase()
+
+	
+    prize.move()
+    prize_touched = False
+
+    if p1.distance(prize) < 20:
+        prize_touched = True
+        score1.increase()
+    elif p2.distance(prize) < 20:
+        prize_touched = True
+        score2.increase()
+
+    if prize_touched == True:
+        prize.relocate()
+        global spawn_count
+        spawn_count += 2
+        for i in range(spawn_count // 2):
+            zombies.append(Zombie(p1))
+            zombies.append(Zombie(p2))
+
+    for zombie in zombies:
+        zombie.move()
+        if zombie.distance(p1) < 20:
+            p1.kill_turtle()
+        if zombie.distance(p2) < 20:
+            p2.kill_turtle()
+
+
+def game_over(message):
+    global running
+    running = False
+    pen = Turtle()
+    pen.hideturtle()
+    pen.color("white")
+    pen.write(message)
 
 
 #### DRIVER CODE ####
@@ -214,6 +299,22 @@ prize = Prize()
 
 playing_area()
 
-screen.ontimer(update(), 50)
+
+score1 = Score(-100, 260, 'blue')
+score2 = Score(100, 260, 'red')
+
+p1 = Player(-100, 0, "blue", screen, "d", "a", "w", 'q')
+p2 = Player(100,0,"red",screen, "Right","Left", 'Up', 'm')
+zombies = []
+prize = Prize()
+spawn_count = 2
+
+
+
+zombies.append(Zombie(p1))
+zombies.append(Zombie(p2))
+
+running = True
+screen.ontimer(update, 50)
 
 screen.mainloop()
