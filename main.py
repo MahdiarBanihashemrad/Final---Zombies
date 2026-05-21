@@ -44,6 +44,7 @@ class Player(Turtle):
         self.color(color)
         self.player_color = color
         self.penup()
+        self.bombs = []
         self.goto(x,y)
         self.setheading(90)
         self.shape("turtle")
@@ -53,6 +54,7 @@ class Player(Turtle):
         screen.onkeypress(self.turn_left, left_key)
         screen.onkeypress(self.turn_right, right_key)
         screen.onkey(self.fire, fire_key)
+        screen.onkey(self.drop_bomb, bomb_key)
 
     def fire(self):
         self.bullets.append(Bullet(self))
@@ -71,15 +73,8 @@ class Player(Turtle):
             self.setheading(-self.heading())
 
     def kill_turtle(self):
-        if self.health <= 0:
-            self.clear()
             self.ht()
             self.alive = False
-
-        if self.health ==2:
-            self.pencolor("Yellow")
-        elif self.health ==1:
-            self.pencolor("Red")
 
     def drop_bomb(self):
         if len(self.bombs) < 3:
@@ -139,7 +134,7 @@ class Prize(Turtle):
 class Zombie(Turtle):
     def __init__(self, target_player):
         super().__init__()
-        self.speed(1)
+        self.speed(0)
         self.shape('turtle')
         self.color('green')
         self.penup()
@@ -157,6 +152,7 @@ class Zombie(Turtle):
 
 class Bomb(Turtle):
     def __init__(self, player):
+        print("Bomb")
         super().__init__()
         self.speed(0)
         self.hideturtle()
@@ -167,23 +163,9 @@ class Bomb(Turtle):
         self.screen = player.getscreen()
         self.blast_radius = 100
         self.screen.ontimer(self.explode, 1000)
+        self.showturtle()
             
 	
-#Bomb Class:
-# Will originate at the location of the Player object that dropped it.
-
-# Each Bomb object will:
-
-# Be placed at the player’s current position
-# Wait for a short delay (~1 second) before exploding
-# When the bomb explodes:
-
-# A circular blast radius of approximately 100 pixels will be drawn
-# All Zombie objects within this radius will be destroyed and removed from the game
-# After exploding:
-
-# The bomb will remove itself from the player’s bomb list
-# The explosion drawing will be cleared
 
     def explode(self):
         self.showturtle()
@@ -200,15 +182,16 @@ class Bomb(Turtle):
         for z in zombies_to_remove:
             zombies.remove(z)
         
+        screen.ontimer(self.clear_explosion, 500)
+        
         
 
     def clear_explosion(self):
+        print("Cleared")
         self.clear()
         self.hideturtle()
         if self in self.player.bombs:
             self.player.bombs.remove(self)
-    
-    # self.screen.ontimer(self.clear_explosion, 500)
         
 
 
@@ -227,56 +210,58 @@ def update():
         game_over("Player 1 Wins! Player 2 was eaten.")
         return
 
-    p1.move()
-    p2.move()
+    if p1.alive and p2.alive:
+
+        p1.move()
+        p2.move()
 
 
-    for bullet in p1.bullets[:]:
-        bullet.move()
+        for bullet in p1.bullets[:]:
+            bullet.move()
+            
+            for zombie in zombies[:]:
+                if bullet.distance(zombie) < 15:
+                    bullet.die()
+                    zombie.die()
+                    zombies.remove(zombie)
+                    score1.increase()
+
+        for bullet in p2.bullets[:]:
+            bullet.move()
+            
+            for zombie in zombies[:]:
+                if bullet.distance(zombie) < 15:
+                    bullet.die()
+                    zombie.die()
+                    zombies.remove(zombie)
+                    score2.increase()
+
         
-        for zombie in zombies[:]:
-            if bullet.distance(zombie) < 15:
-                bullet.die()
-                zombie.die()
-                zombies.remove(zombie)
-                score1.increase()
+        prize.move()
+        prize_touched = False
 
-    for bullet in p2.bullets[:]:
-        bullet.move()
-        
-        for zombie in zombies[:]:
-            if bullet.distance(zombie) < 15:
-                bullet.die()
-                zombie.die()
-                zombies.remove(zombie)
-                score2.increase()
+        if p1.distance(prize) < 20:
+            prize_touched = True
+            score1.increase()
+        elif p2.distance(prize) < 20:
+            prize_touched = True
+            score2.increase()
 
-	
-    prize.move()
-    prize_touched = False
+        if prize_touched == True:
+            prize.relocate()
+            global spawn_count
+            spawn_count += 2
+            for i in range(spawn_count // 2):
+                zombies.append(Zombie(p1))
+                zombies.append(Zombie(p2))
 
-    if p1.distance(prize) < 20:
-        prize_touched = True
-        score1.increase()
-    elif p2.distance(prize) < 20:
-        prize_touched = True
-        score2.increase()
-
-    if prize_touched == True:
-        prize.relocate()
-        global spawn_count
-        spawn_count += 2
-        for i in range(spawn_count // 2):
-            zombies.append(Zombie(p1))
-            zombies.append(Zombie(p2))
-
-    for zombie in zombies:
-        zombie.move()
-        if zombie.distance(p1) < 20:
-            p1.kill_turtle()
-        if zombie.distance(p2) < 20:
-            p2.kill_turtle()
-
+        for zombie in zombies:
+            zombie.move()
+            if zombie.distance(p1) < 20:
+                p1.kill_turtle()
+            if zombie.distance(p2) < 20:
+                p2.kill_turtle()
+    screen.ontimer(update, 30)
 
 def game_over(message):
     global running
@@ -291,9 +276,10 @@ def game_over(message):
 screen = Screen()
 screen.bgcolor("black")
 screen.listen()
+screen.onkey(update, "space")
 
-p1 = Player(-100, 0, "blue", screen, "d", "a", "w")
-p2 = Player(100,0,"red",screen, "Right","Left", 'Up')
+p1 = Player(-100, 0, "blue", screen, "d", "a", "w", "q")
+p2 = Player(100,0,"red",screen, "Right","Left", 'Up', "m")
 prize = Prize()
 
 
@@ -315,6 +301,6 @@ zombies.append(Zombie(p1))
 zombies.append(Zombie(p2))
 
 running = True
-screen.ontimer(update, 50)
+
 
 screen.mainloop()
