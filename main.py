@@ -57,7 +57,8 @@ class Player(Turtle):
         screen.onkey(self.drop_bomb, bomb_key)
 
     def fire(self):
-        self.bullets.append(Bullet(self))
+        if len(self.bullets) < 5:
+            self.bullets.append(Bullet(self))
 
     def turn_left(self):
         self.left(10)
@@ -261,6 +262,7 @@ def update():
                 p1.kill_turtle()
             if zombie.distance(p2) < 20:
                 p2.kill_turtle()
+    time.sleep(0.01)
     screen.ontimer(update, 30)
 
 def game_over(message):
@@ -281,7 +283,6 @@ screen.onkey(update, "space")
 p1 = Player(-100, 0, "blue", screen, "d", "a", "w", "q")
 p2 = Player(100,0,"red",screen, "Right","Left", 'Up', "m")
 prize = Prize()
-
 
 playing_area()
 
